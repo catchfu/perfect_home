@@ -1,0 +1,112 @@
+{
+  "nav": {
+    "home": "Home",
+    "analyze": "Analyze",
+    "history": "History",
+    "pricing": "Pricing",
+    "howItWorks": "How It Works",
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "signOut": "Sign Out",
+    "dashboard": "Dashboard"
+  },
+  "hero": {
+    "title": "See What's Really Wrong With Your Floor Plan",
+    "subtitle": "AI-powered home layout diagnosis that exposes problems — not sugar-coats them. Before you buy or rent, know exactly what you're living with.",
+    "cta": "Analyze Your Floor Plan",
+    "sample": "View Sample Reports"
+  },
+  "howItWorks": {
+    "title": "How It Works",
+    "step1": "Upload Floor Plan",
+    "step1desc": "Drag in your floor plan — developer drawing, CAD, hand sketch, or screenshot.",
+    "step2": "AI Deep Diagnosis",
+    "step2desc": "Our AI scans 8 categories: entrance, flow, rooms, lighting, storage, and more.",
+    "step3": "Get Your Report",
+    "step3desc": "Receive a clear diagnostic report with issues, priorities, and actionable fixes."
+  },
+  "analyze": {
+    "title": "Analyze Your Floor Plan",
+    "uploadTitle": "Upload Floor Plan",
+    "uploadDesc": "Drag & drop your floor plan here, or click to browse",
+    "uploadHint": "Supports JPG, PNG, WEBP up to 20MB",
+    "contextTitle": "Additional Context (Optional)",
+    "contextDesc": "Help us diagnose more accurately",
+    "direction": "Door Direction",
+    "directionPlaceholder": "e.g., South-facing entrance",
+    "city": "City / District",
+    "floor": "Floor",
+    "totalFloors": "Total Floors",
+    "occupants": "Number of Occupants",
+    "environment": "External Environment",
+    "environmentPlaceholder": "e.g., road, bridge, hospital, school",
+    "issues": "Current Concerns",
+    "issuesPlaceholder": "e.g., sleep, health, finances, relationships",
+    "submit": "Start Diagnosis",
+    "analyzing": "Analyzing...",
+    "progress": "Extracting structure → Identifying issues → Generating report",
+    "success": "Diagnosis complete!",
+    "error": "Analysis failed. Please try again."
+  },
+  "report": {
+    "title": "Floor Plan Diagnosis Report",
+    "subtitle": "Problems only. No fluff.",
+    "directionLabel": "Direction",
+    "directionAssumption": "Direction assumed: Top-North, Bottom-South",
+    "problems": "Key Issues",
+    "priorities": "What to Fix First",
+    "priority": "Priority",
+    "recommendations": "Actionable Fixes",
+    "causalChain": "Root Cause Chain",
+    "bottomLine": "Bottom Line",
+    "download": "Download Report",
+    "share": "Share",
+    "landscape": "Landscape (16:9)",
+    "portrait": "Portrait (9:16)"
+  },
+  "dashboard": {
+    "title": "My Reports",
+    "empty": "No reports yet. Analyze your first floor plan!",
+    "credits": "Credits Remaining",
+    "buyCredits": "Buy Credits",
+    "paymentHistory": "Payment History",
+    "noPayments": "No payments yet",
+    "amount": "Amount",
+    "date": "Date"
+  },
+  "pricing": {
+    "title": "Simple, Transparent Pricing",
+    "subtitle": "Start free. Upgrade when you need more.",
+    "free": "Free",
+    "pro": "Pro Monthly",
+    "tenPack": "10 Extra Credits",
+    "thirtyPack": "30 Extra Credits",
+    "perMonth": "/month",
+    "oneTime": "one-time",
+    "forever": "forever",
+    "purchase": "Purchase",
+    "getStarted": "Get Started",
+    "contact": "Contact Us"
+  },
+  "share": {
+    "title": "Share Report",
+    "whatsapp": "WhatsApp",
+    "wechat": "WeChat",
+    "copyLink": "Copy Link",
+    "linkCopied": "Link copied!"
+  },
+  "footer": {
+    "tagline": "Honest floor plan diagnostics. No sugar-coating.",
+    "copyright": "Perfect Home. All rights reserved."
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "retry": "Retry",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "confirm": "Confirm",
+    "insufficientCredits": "Insufficient credits. Please purchase more."
+  }
+}

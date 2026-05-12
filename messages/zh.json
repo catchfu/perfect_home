@@ -1,0 +1,112 @@
+{
+  "nav": {
+    "home": "首页",
+    "analyze": "分析",
+    "history": "历史",
+    "pricing": "定价",
+    "howItWorks": "如何运作",
+    "signIn": "登录",
+    "signUp": "注册",
+    "signOut": "退出",
+    "dashboard": "我的报告"
+  },
+  "hero": {
+    "title": "看清你家户型真正的问题",
+    "subtitle": "AI 户型诊断 — 只说问题，不讲空话。买房租房前，先知道你要住的到底是什么。",
+    "cta": "诊断你的户型",
+    "sample": "查看样例报告"
+  },
+  "howItWorks": {
+    "title": "如何运作",
+    "step1": "上传户型图",
+    "step1desc": "拖入你的户型图 — 开发商图纸、CAD、手绘或截图都可以。",
+    "step2": "AI 深度诊断",
+    "step2desc": "AI 扫描 8 大维度：入户、动线、房间、采光、收纳等等。",
+    "step3": "获取报告",
+    "step3desc": "拿到清晰的诊断报告，包含问题、优先级和可操作的改进方案。"
+  },
+  "analyze": {
+    "title": "诊断户型",
+    "uploadTitle": "上传户型图",
+    "uploadDesc": "拖拽户型图到此处，或点击浏览",
+    "uploadHint": "支持 JPG、PNG、WEBP，最大 20MB",
+    "contextTitle": "补充信息（可选）",
+    "contextDesc": "帮助更精准地诊断",
+    "direction": "入户门朝向",
+    "directionPlaceholder": "例如：朝南",
+    "city": "城市 / 片区",
+    "floor": "楼层",
+    "totalFloors": "总楼层",
+    "occupants": "居住人数",
+    "environment": "外部环境",
+    "environmentPlaceholder": "例如：路、桥、医院、学校",
+    "issues": "当前困扰",
+    "issuesPlaceholder": "例如：睡眠、健康、事业、财务",
+    "submit": "开始诊断",
+    "analyzing": "诊断中...",
+    "progress": "提取结构 → 识别问题 → 生成报告",
+    "success": "诊断完成！",
+    "error": "诊断失败，请重试。"
+  },
+  "report": {
+    "title": "户型问题诊断图",
+    "subtitle": "只讲问题，不讲空话",
+    "directionLabel": "方向",
+    "directionAssumption": "方向假设：上北下南，左西右东",
+    "problems": "核心问题",
+    "priorities": "先改什么",
+    "priority": "优先级",
+    "recommendations": "落地调整方案",
+    "causalChain": "因果链",
+    "bottomLine": "一句诀",
+    "download": "下载报告",
+    "share": "分享",
+    "landscape": "横版 (16:9)",
+    "portrait": "竖版 (9:16)"
+  },
+  "dashboard": {
+    "title": "我的报告",
+    "empty": "还没有报告，快去诊断你的第一个户型吧！",
+    "credits": "剩余次数",
+    "buyCredits": "购买次数",
+    "paymentHistory": "付款记录",
+    "noPayments": "暂无付款记录",
+    "amount": "金额",
+    "date": "日期"
+  },
+  "pricing": {
+    "title": "简洁透明的定价",
+    "subtitle": "免费开始，按需升级。",
+    "free": "免费版",
+    "pro": "专业版 (月付)",
+    "tenPack": "10 次加量包",
+    "thirtyPack": "30 次超值包",
+    "perMonth": "/月",
+    "oneTime": "一次性",
+    "forever": "永久",
+    "purchase": "购买",
+    "getStarted": "免费开始",
+    "contact": "联系我们"
+  },
+  "share": {
+    "title": "分享报告",
+    "whatsapp": "WhatsApp",
+    "wechat": "微信",
+    "copyLink": "复制链接",
+    "linkCopied": "链接已复制！"
+  },
+  "footer": {
+    "tagline": "诚实的户型诊断，不讲空话。",
+    "copyright": "完美家居 版权所有"
+  },
+  "common": {
+    "loading": "加载中...",
+    "error": "出了点问题",
+    "retry": "重试",
+    "save": "保存",
+    "cancel": "取消",
+    "delete": "删除",
+    "confirm": "确认",
+    "insufficientCredits": "次数不足，请购买更多诊断次数。"
+  }
+}
