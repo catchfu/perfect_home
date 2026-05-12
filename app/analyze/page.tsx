@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Progress } from "@/components/ui/progress"
 import { PageTransition, FadeIn } from "@/components/animations"
-import { Upload, Image as ImageIcon, Loader2, CheckCircle2, AlertCircle, ArrowRight } from "lucide-react"
+import { CameraCapture } from "@/components/camera-capture"
+import { Upload, Image as ImageIcon, Loader2, CheckCircle2, AlertCircle, ArrowRight, Camera } from "lucide-react"
 import { useDropzone } from "react-dropzone"
 import type { FloorPlanContext } from "@/types"
 
@@ -63,24 +64,41 @@ export default function AnalyzePage() {
       </div>
 
       {step === "upload" && (
-        <Card>
-          <div
-            {...getRootProps()}
-            className={`flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-12 transition-colors ${
-              isDragActive
-                ? "border-[#2C4A5A] bg-[#2C4A5A]/5"
-                : "border-[#D4CEC4] hover:border-[#2C4A5A]/50"
-            }`}
-          >
-            <input {...getInputProps()} />
-            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#2C4A5A]/10">
-              <Upload className="h-8 w-8 text-[#2C4A5A]" />
+        <div className="space-y-4">
+          <Card>
+            <div
+              {...getRootProps()}
+              className={`flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-12 transition-colors ${
+                isDragActive
+                  ? "border-[#2C4A5A] bg-[#2C4A5A]/5"
+                  : "border-[#D4CEC4] hover:border-[#2C4A5A]/50"
+              }`}
+            >
+              <input {...getInputProps()} />
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#2C4A5A]/10">
+                <Upload className="h-8 w-8 text-[#2C4A5A]" />
+              </div>
+              <p className="text-lg font-medium">{t("analyze.uploadTitle")}</p>
+              <p className="mt-1 text-sm text-[#6B6B6B]">{t("analyze.uploadDesc")}</p>
+              <p className="mt-4 text-xs text-[#8B8B8B]">{t("analyze.uploadHint")}</p>
             </div>
-            <p className="text-lg font-medium">{t("analyze.uploadTitle")}</p>
-            <p className="mt-1 text-sm text-[#6B6B6B]">{t("analyze.uploadDesc")}</p>
-            <p className="mt-4 text-xs text-[#8B8B8B]">{t("analyze.uploadHint")}</p>
+          </Card>
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-[#D4CEC4]" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-[#F5F0EB] px-2 text-[#8B8B8B]">or</span>
+            </div>
           </div>
-        </Card>
+          <CameraCapture
+            onCapture={(file) => {
+              setFile(file)
+              setPreview(URL.createObjectURL(file))
+              setStep("context")
+            }}
+          />
+        </div>
       )}
 
       {step === "context" && preview && (

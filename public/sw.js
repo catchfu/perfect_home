@@ -28,12 +28,10 @@ self.addEventListener("fetch", (event) => {
   const { request } = event
   const url = new URL(request.url)
 
-  // API calls: network-only
   if (url.pathname.startsWith("/api/")) {
     return
   }
 
-  // Static assets: cache-first
   if (
     request.destination === "style" ||
     request.destination === "script" ||
@@ -50,7 +48,6 @@ self.addEventListener("fetch", (event) => {
     return
   }
 
-  // Pages: network-first, fallback to cache, then offline
   event.respondWith(
     fetch(request)
       .then((res) => {
@@ -61,5 +58,40 @@ self.addEventListener("fetch", (event) => {
       .catch(() =>
         caches.match(request).then((cached) => cached || caches.match("/offline"))
       )
+  )
+})
+
+// Push notification
+self.addEventListener("push", (event) => {
+  let data = { title: "Perfect Home", body: "Your diagnosis is ready!" }
+  try {
+    if (event.data) data = JSON.parse(event.data.text())
+  } catch {
+    data.body = event.data?.text() ?? data.body
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      data: { url: data.url ?? "/dashboard" },
+    })
+  )
+})
+
+// Notification click
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close()
+  const url = event.notification.data?.url ?? "/dashboard"
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientsList) => {
+      for (const client of clientsList) {
+        if (client.url.includes(url) && "focus" in client) {
+          return client.focus()
+        }
+      }
+      return clients.openWindow(url)
+    })
   )
 })

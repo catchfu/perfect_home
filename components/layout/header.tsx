@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useSession } from "next-auth/react"
 import { useLocale } from "@/hooks/use-localization"
+import { PushNotificationToggle } from "@/components/push-notification-toggle"
 import { Home, Menu, X } from "lucide-react"
 import { useState } from "react"
 
@@ -39,6 +40,7 @@ export function Header() {
         </nav>
 
         <div className="hidden items-center gap-4 md:flex">
+          <PushNotificationToggle />
           <button
             onClick={() => setLocale(locale === "en" ? "zh" : "en")}
             className="text-sm text-[#6B6B6B] transition-colors hover:text-[#2C2C2C]"
