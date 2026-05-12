@@ -1,36 +1,119 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Perfect Home — Honest Floor Plan Diagnostics
+
+AI-powered tool that analyzes floor plans and exposes problems — not sugar-coats them. Before you buy or rent, know exactly what you'll be living with.
+
+## How It Works
+
+1. **Upload** — Drop in any floor plan (developer drawing, CAD, hand sketch, screenshot)
+2. **AI Diagnosis** — AI scans 8 categories of issues: entrance flow, circulation, living spaces, bedrooms, kitchen, bathroom, lighting & ventilation, storage, and Feng Shui
+3. **Get Report** — Receive a visual diagnostic report with numbered problem markers, priority rankings, causal chain analysis, and actionable fixes
+
+## Tech Stack
+
+| Layer | Stack |
+|-------|-------|
+| Framework | Next.js 16 (App Router) |
+| Styling | Tailwind CSS v4 |
+| Components | Custom design system (cream + ink blue palette) |
+| State | TanStack React Query + Zustand |
+| Forms | React Hook Form + Zod |
+| Auth | NextAuth.js (Google / GitHub OAuth) |
+| Database | PostgreSQL + Prisma ORM |
+| Storage | Local filesystem (pluggable to S3/R2) |
+| AI | GPT-4 Vision / Claude (mock pipeline for MVP) |
+| Payments | Stripe (checkout sessions + webhooks) |
+| OG Images | @vercel/og (Satori) |
+| Analytics | PostHog |
+| Animations | Framer Motion |
+| PWA | Manifest + Service Worker + Offline page |
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+npm install
+cp .env.example .env  # configure your env vars
+npx prisma db push     # sync DB schema
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Environment Variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Variable | Description |
+|----------|-------------|
+| `DATABASE_URL` | PostgreSQL connection string |
+| `NEXTAUTH_SECRET` | NextAuth encryption secret |
+| `NEXTAUTH_URL` | App URL (e.g. http://localhost:3000) |
+| `GITHUB_ID` / `GITHUB_SECRET` | GitHub OAuth app credentials |
+| `GOOGLE_ID` / `GOOGLE_SECRET` | Google OAuth app credentials |
+| `STRIPE_SECRET_KEY` | Stripe secret key |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe publishable key |
+| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret |
+| `NEXT_PUBLIC_POSTHOG_KEY` | PostHog project API key |
+| `NEXT_PUBLIC_POSTHOG_HOST` | PostHog instance URL |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Routes
 
-## Learn More
+| Route | Type | Description |
+|-------|------|-------------|
+| `/` | Static | Landing page with samples |
+| `/analyze` | Static | Upload floor plan + context form |
+| `/analyze/result/[id]` | Dynamic | Full diagnosis report |
+| `/dashboard` | Static | User history + credits |
+| `/pricing` | Static | Subscription plans |
+| `/how-it-works` | Static | Feature explanation |
+| `/auth/signin` | Static | OAuth sign in |
+| `/offline` | Static | PWA offline fallback |
+| `/og` | Edge | Dynamic OG image |
+| `/og/report/[id]` | Edge | Report OG image |
 
-To learn more about Next.js, take a look at the following resources:
+### API Endpoints
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Route | Method | Description |
+|-------|--------|-------------|
+| `/api/analyze` | POST | Submit floor plan for analysis |
+| `/api/analysis/[id]` | GET | Poll analysis status / get report |
+| `/api/stripe/checkout` | POST | Create Stripe checkout session |
+| `/api/stripe/webhook` | POST | Stripe payment webhook |
+| `/api/user/reports` | GET | User's report history |
+| `/api/user/payments` | GET | User's payment history |
+| `/api/auth/[...nextauth]` | * | NextAuth handler |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Project Structure
 
-## Deploy on Vercel
+```
+app/                    # Next.js App Router pages
+├── analyze/            # Upload + report flow
+├── api/                # API routes
+├── auth/               # Sign in page
+├── dashboard/          # User dashboard
+├── og/                 # OG image generation
+├── layout.tsx          # Root layout
+└── page.tsx            # Landing page
+components/             # Shared components
+├── ui/                 # Button, Card, Input, Label, Progress
+├── layout/             # Header, Footer
+├── pricing/            # Pricing section
+├── report/             # Share buttons, PDF export
+├── animations.tsx      # Framer Motion wrappers
+├── providers.tsx       # Session + Query + PostHog
+└── service-worker-register.tsx
+hooks/                  # use-localization, use-analysis, use-checkout
+lib/                    # auth, i18n, prisma, stripe, utils
+messages/               # en.json, zh.json
+prisma/                 # Schema + generated client
+public/                 # Static assets, icons, sw.js
+types/                  # TypeScript types
+scripts/                # Icon generation script
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Deployment
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Optimized for Vercel. Push to `main` and Vercel auto-deploys.
+
+```bash
+vercel --prod
+```
+
+## License
+
+Private — All rights reserved.
