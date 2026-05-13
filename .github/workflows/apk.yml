@@ -4,19 +4,16 @@ on:
   workflow_dispatch:
     inputs:
       pwa_url:
-        description: "Deployed PWA URL (must have manifest.webmanifest)"
+        description: "Deployed PWA URL"
         required: true
-        default: "https://perfecthome.app"
-  push:
-    tags:
-      - "v*"
+        default: "https://perfect-home-chi.vercel.app"
 
 env:
   NODE_VERSION: 20
 
 jobs:
   apk:
-    name: Generate APK via PWABuilder
+    name: Generate APK via CloudAPK
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -25,61 +22,89 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Get PWA URL
-        id: url
-        run: |
-          URL="${{ github.event.inputs.pwa_url }}"
-          if [ -z "$URL" ]; then
-            echo "Using default URL from vercel.json or tag"
-            URL="https://perfecthome.app"
-          fi
-          echo "pwa_url=$URL" >> $GITHUB_OUTPUT
-          echo "Building APK for: $URL"
-
-      - name: Submit to PWABuilder
+      - name: Build APK via PWABuilder CloudAPK
         id: build
         run: |
-          URL="${{ steps.url.outputs.pwa_url }}"
-          echo "Submitting $URL to PWABuilder..."
-          RESPONSE=$(curl -s -X POST "https://pwabuilder.com/api/v2/build?url=$(echo -n "$URL" | jq -sRr @uri)")
-          BUILD_ID=$(echo "$RESPONSE" | jq -r '.id')
-          echo "Build ID: $BUILD_ID"
-          echo "build_id=$BUILD_ID" >> $GITHUB_OUTPUT
-
-      - name: Poll for completion
-        id: poll
-        run: |
-          BUILD_ID="${{ steps.build.outputs.build_id }}"
-          for i in $(seq 1 30); do
-            STATUS=$(curl -s "https://pwabuilder.com/api/v2/build/$BUILD_ID" | jq -r '.status')
-            echo "Attempt $i/30: $STATUS"
-            if [ "$STATUS" = "COMPLETE" ]; then
-              echo "Build complete!"
-              echo "status=complete" >> $GITHUB_OUTPUT
-              exit 0
-            fi
-            if [ "$STATUS" = "FAILED" ]; then
-              echo "Build failed!"
-              echo "status=failed" >> $GITHUB_OUTPUT
-              exit 1
-            fi
-            sleep 5
-          done
-          echo "Timed out waiting for build"
-          exit 1
+          URL="${{ github.event.inputs.pwa_url }}"
+          MANIFEST_URL="${URL}/manifest.webmanifest"
+          
+          echo "PWA URL: $URL"
+          echo "Manifest: $MANIFEST_URL"
+          
+          # Fetch manifest to extract app details
+          MANIFEST=$(curl -s "$MANIFEST_URL")
+          APP_NAME=$(echo "$MANIFEST" | jq -r '.name')
+          SHORT_NAME=$(echo "$MANIFEST" | jq -r '.short_name')
+          BG_COLOR=$(echo "$MANIFEST" | jq -r '.background_color')
+          THEME_COLOR=$(echo "$MANIFEST" | jq -r '.theme_color')
+          ICON_URL="${URL}/icons/icon-512.png"
+          
+          echo "App: $APP_NAME"
+          
+          # Submit to PWABuilder CloudAPK service
+          RESPONSE=$(curl -s -X POST "https://pwabuilder-cloudapk.azurewebsites.net/generateAppPackage" \
+            -H "Content-Type: application/json" \
+            -d "$(cat <<EOF
+          {
+            "url": "$MANIFEST_URL",
+            "host": "$URL",
+            "name": "$APP_NAME",
+            "shortName": "$SHORT_NAME",
+            "appPackage": "com.perfecthome.app",
+            "appVersion": "1.0.0.0",
+            "appVersionCode": 1,
+            "backgroundColor": "$BG_COLOR",
+            "themeColor": "$THEME_COLOR",
+            "navigationColor": "$THEME_COLOR",
+            "splashScreenBackgroundColor": "$BG_COLOR",
+            "display": "standalone",
+            "orientation": "portrait",
+            "iconUrl": "$ICON_URL",
+            "maskableIconUrl": "$ICON_URL",
+            "launchUrl": "/",
+            "signingMode": "unsigned",
+            "fallbackType": "customtab",
+            "isFullScopeUrl": true,
+            "isPackageIdOk": true,
+            "includeSourceApp": true,
+            "features": {},
+            "additionalTrustedOrigins": []
+          }
+          EOF
+          )")
+          
+          echo "Response:"
+          echo "$RESPONSE" | jq .
+          
+          # Check for download URL
+          DOWNLOAD_URL=$(echo "$RESPONSE" | jq -r '.downloadUrl // .zipUrl // empty')
+          if [ -z "$DOWNLOAD_URL" ] || [ "$DOWNLOAD_URL" = "null" ]; then
+            echo "No download URL found. Checking full response..."
+            echo "$RESPONSE" | jq -r 'keys | .[]' | while read key; do
+              echo "  $key: $(echo "$RESPONSE" | jq -r ".[$key]")"
+            done
+            exit 1
+          fi
+          
+          echo "download_url=$DOWNLOAD_URL" >> $GITHUB_OUTPUT
 
       - name: Download APK
-        if: steps.poll.outputs.status == 'complete'
         run: |
-          BUILD_ID="${{ steps.build.outputs.build_id }}"
+          DOWNLOAD_URL="${{ steps.build.outputs.download_url }}"
           mkdir -p android-build
-          curl -s -o "android-build/perfect-home.apk" \
-            "https://pwabuilder.com/api/v2/build/$BUILD_ID/apk"
-          echo "APK size: $(ls -lh android-build/perfect-home.apk | awk '{print $5}')"
+          
+          echo "Downloading from: $DOWNLOAD_URL"
+          curl -s -L -o android-build/perfect-home.zip "$DOWNLOAD_URL"
+          
+          if [ -f android-build/perfect-home.zip ]; then
+            ls -lh android-build/
+            unzip -o android-build/perfect-home.zip -d android-build/
+            ls -lh android-build/
+          fi
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: perfect-home-apk
-          path: android-build/perfect-home.apk
+          path: android-build/
           retention-days: 30
