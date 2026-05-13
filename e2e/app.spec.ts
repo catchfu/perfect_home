@@ -82,7 +82,8 @@ test.describe("Pricing page", () => {
   test("shows all plan tiers", async ({ page }) => {
     await page.goto("/pricing")
     await expect(page.getByRole("heading", { name: "Free" })).toBeVisible()
-    await expect(page.getByText("Extra Credits")).toBeVisible()
+    await expect(page.getByRole("heading", { name: "10 Extra Credits" })).toBeVisible()
+    await expect(page.getByRole("heading", { name: "30 Extra Credits" })).toBeVisible()
   })
 })
 

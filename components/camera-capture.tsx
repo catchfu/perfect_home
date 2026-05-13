@@ -8,6 +8,15 @@ interface CameraCaptureProps {
   onCapture: (file: File) => void
 }
 
+function dataURLToBlob(dataUrl: string) {
+  const parts = dataUrl.split(",")
+  const mime = parts[0].match(/:(.*?);/)![1]
+  const bytes = atob(parts[1])
+  const arr = new Uint8Array(bytes.length)
+  for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i)
+  return new Blob([arr], { type: mime })
+}
+
 export function CameraCapture({ onCapture }: CameraCaptureProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -65,15 +74,6 @@ export function CameraCapture({ onCapture }: CameraCaptureProps) {
     stopCamera()
     setCaptured(null)
   }, [captured, onCapture, stopCamera])
-
-  function dataURLToBlob(dataUrl: string) {
-    const parts = dataUrl.split(",")
-    const mime = parts[0].match(/:(.*?);/)![1]
-    const bytes = atob(parts[1])
-    const arr = new Uint8Array(bytes.length)
-    for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i)
-    return new Blob([arr], { type: mime })
-  }
 
   if (!active) {
     return (
