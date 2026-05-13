@@ -26,44 +26,59 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install Bubblewrap & expect
+      - name: Setup Android SDK
+        env:
+          ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
         run: |
-          npm install -g @bubblewrap/cli
-          sudo apt-get update -qq && sudo apt-get install -y -qq expect
+          mkdir -p $ANDROID_SDK_ROOT
+          cd /tmp
+          curl -sL -o cmdline-tools.zip "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
+          unzip -q -o cmdline-tools.zip
+          mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
+          mv cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest
+          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager \
+            --sdk_root=$ANDROID_SDK_ROOT \
+            "platforms;android-34" "build-tools;34.0.0" > /dev/null 2>&1
 
-      - name: Build APK via Bubblewrap
+      - name: Install Bubblewrap
+        run: npm install -g @bubblewrap/cli
+
+      - name: Build APK
         shell: bash
+        env:
+          ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
         run: |
           PWA_URL="${{ github.event.inputs.pwa_url }}"
-          export MANIFEST="${PWA_URL}/manifest.webmanifest"
-
+          MANIFEST="${PWA_URL}/manifest.webmanifest"
+          echo "PWA: $PWA_URL"
+          export JAVA_HOME=$JAVA_HOME_17_X64
           mkdir -p android-build
 
-          expect << 'EOL'
-          set timeout 600
-          spawn npx @bubblewrap/cli init \
-            --manifest $env(MANIFEST) \
-            --directory ./android-build
+          # Use 'script' to create a pseudo-TTY (Bubblewrap uses inquirer which needs a real TTY)
+          # Pipe answers via stdin through the PTY
+          echo "--- Bubblewrap init ---"
+          ANSWERS="Y
+          Y
+          y
+          com.perfecthome.app
+          Perfect Home
+          1.0.0
+          1
+          "
+          echo "$ANSWERS" | script -q -c "npx @bubblewrap/cli init --manifest \"$MANIFEST\" --directory ./android-build 2>&1" /dev/null
 
-          expect {JDK} { send "\r" }
-          expect {Android SDK} { send "\r" }
-          expect {terms} { send "y\r" }
-          expect {Package ID} { send "com.perfecthome.app\r" }
-          expect {App name} { send "Perfect Home\r" }
-          expect {version name} { send "1.0.0\r" }
-          expect {version code} { send "1\r" }
-          expect eof
-          EOL
-
-          echo "--- Init done ---"
-          ls -la android-build/
+          echo "--- Files after init ---"
+          find android-build -type f | head -15
 
           if [ -f "android-build/twa-manifest.json" ]; then
-            echo "--- Building APK ---"
-            npx @bubblewrap/cli build --directory=./android-build 2>&1
+            echo "--- Bubblewrap build ---"
+            script -q -c "npx @bubblewrap/cli build --directory ./android-build" /dev/null
+          else
+            echo "ERROR: init failed"
+            ls -la android-build/
           fi
 
-          echo "--- Output ---"
+          echo "--- APK Output ---"
           find android-build -type f \( -name "*.apk" -o -name "*.aab" \) 2>/dev/null || echo "No APK found"
 
       - name: Upload APK
@@ -72,3 +87,4 @@ jobs:
           name: perfect-home-apk
           path: android-build/
           retention-days: 30
+          if-no-files-found: warn
