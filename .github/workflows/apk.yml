@@ -10,12 +10,12 @@ on:
 
 jobs:
   apk:
-    name: Generate APK via Bubblewrap
+    name: Generate APK
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Java
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -26,35 +26,45 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install Bubblewrap
-        run: npm install -g @bubblewrap/cli
+      - name: Install Bubblewrap & expect
+        run: |
+          npm install -g @bubblewrap/cli
+          sudo apt-get update -qq && sudo apt-get install -y -qq expect
 
-      - name: Build APK
+      - name: Build APK via Bubblewrap
         shell: bash
         run: |
           PWA_URL="${{ github.event.inputs.pwa_url }}"
-          MANIFEST="${PWA_URL}/manifest.webmanifest"
-          echo "Manifest: $MANIFEST"
-          
+          export MANIFEST="${PWA_URL}/manifest.webmanifest"
+
           mkdir -p android-build
-          
-          echo "--- Bubblewrap init ---"
-          # Answer all Bubblewrap prompts: Y for JDK/SDK install, y for ToS
-          yes "y" | npx @bubblewrap/cli init \
-            --manifest="$MANIFEST" \
-            --directory=./android-build 2>&1
-          
-          echo "--- Files after init ---"
-          find android-build -type f
-          
+
+          expect << 'EOL'
+          set timeout 600
+          spawn npx @bubblewrap/cli init \
+            --manifest $env(MANIFEST) \
+            --directory ./android-build
+
+          expect {JDK} { send "\r" }
+          expect {Android SDK} { send "\r" }
+          expect {terms} { send "y\r" }
+          expect {Package ID} { send "com.perfecthome.app\r" }
+          expect {App name} { send "Perfect Home\r" }
+          expect {version name} { send "1.0.0\r" }
+          expect {version code} { send "1\r" }
+          expect eof
+          EOL
+
+          echo "--- Init done ---"
+          ls -la android-build/
+
           if [ -f "android-build/twa-manifest.json" ]; then
-            echo "--- Bubblewrap build ---"
-            npx @bubblewrap/cli build \
-              --directory=./android-build 2>&1
+            echo "--- Building APK ---"
+            npx @bubblewrap/cli build --directory=./android-build 2>&1
           fi
-          
-          echo "--- Final output ---"
-          find android-build -type f \( -name "*.apk" -o -name "*.aab" -o -name "*.zip" \) 2>/dev/null || echo "No APK found"
+
+          echo "--- Output ---"
+          find android-build -type f \( -name "*.apk" -o -name "*.aab" \) 2>/dev/null || echo "No APK found"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
