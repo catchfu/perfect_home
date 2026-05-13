@@ -2,6 +2,11 @@ name: Build Android APK
 
 on:
   workflow_dispatch:
+    inputs:
+      pwa_url:
+        description: "Deployed PWA URL (must have manifest.webmanifest)"
+        required: true
+        default: "https://perfecthome.app"
   push:
     tags:
       - "v*"
@@ -11,7 +16,7 @@ env:
 
 jobs:
   apk:
-    name: Generate APK from PWA
+    name: Generate APK via PWABuilder
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,28 +24,62 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: npm
 
-      - run: npm ci
-
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 17
-
-      - name: Install Bubblewrap
-        run: npm install -g @bubblewrap/cli
-
-      - name: Generate APK
+      - name: Get PWA URL
+        id: url
         run: |
-          npx bubblewrap init \
-            --manifest https://perfecthome.app/manifest.webmanifest \
-            --directory ./android-build \
-            --jdkPath $JAVA_HOME
+          URL="${{ github.event.inputs.pwa_url }}"
+          if [ -z "$URL" ]; then
+            echo "Using default URL from vercel.json or tag"
+            URL="https://perfecthome.app"
+          fi
+          echo "pwa_url=$URL" >> $GITHUB_OUTPUT
+          echo "Building APK for: $URL"
+
+      - name: Submit to PWABuilder
+        id: build
+        run: |
+          URL="${{ steps.url.outputs.pwa_url }}"
+          echo "Submitting $URL to PWABuilder..."
+          RESPONSE=$(curl -s -X POST "https://pwabuilder.com/api/v2/build?url=$(echo -n "$URL" | jq -sRr @uri)")
+          BUILD_ID=$(echo "$RESPONSE" | jq -r '.id')
+          echo "Build ID: $BUILD_ID"
+          echo "build_id=$BUILD_ID" >> $GITHUB_OUTPUT
+
+      - name: Poll for completion
+        id: poll
+        run: |
+          BUILD_ID="${{ steps.build.outputs.build_id }}"
+          for i in $(seq 1 30); do
+            STATUS=$(curl -s "https://pwabuilder.com/api/v2/build/$BUILD_ID" | jq -r '.status')
+            echo "Attempt $i/30: $STATUS"
+            if [ "$STATUS" = "COMPLETE" ]; then
+              echo "Build complete!"
+              echo "status=complete" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+            if [ "$STATUS" = "FAILED" ]; then
+              echo "Build failed!"
+              echo "status=failed" >> $GITHUB_OUTPUT
+              exit 1
+            fi
+            sleep 5
+          done
+          echo "Timed out waiting for build"
+          exit 1
+
+      - name: Download APK
+        if: steps.poll.outputs.status == 'complete'
+        run: |
+          BUILD_ID="${{ steps.build.outputs.build_id }}"
+          mkdir -p android-build
+          curl -s -o "android-build/perfect-home.apk" \
+            "https://pwabuilder.com/api/v2/build/$BUILD_ID/apk"
+          echo "APK size: $(ls -lh android-build/perfect-home.apk | awk '{print $5}')"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: perfect-home-apk
-          path: android-build/**/*.apk
+          path: android-build/perfect-home.apk
           retention-days: 30

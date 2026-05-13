@@ -1,71 +1,80 @@
 /**
- * Generate Android APK via PWABuilder API
- * No Android SDK or Java required.
+ * Build Android APK via PWABuilder API (no SDK required).
  *
- * Usage: node scripts/build-apk.mjs
- *
- * Prerequisites:
- * - Your PWA must be deployed (update PWA_URL below)
- * - Must have a valid manifest.webmanifest
+ * Usage:
+ *   node scripts/build-apk.mjs                    # uses PERFECT_HOME_URL env or falls back to prompt
+ *   PWA_URL=https://myapp.com node scripts/build-apk.mjs
  */
 
-const PWA_URL = process.env.PWA_URL || "https://perfecthome.app"
+const PWA_URL = process.env.PWA_URL || process.env.PERFECT_HOME_URL
 
-async function buildApk() {
-  console.log(`Building APK for PWA at: ${PWA_URL}`)
+async function prompt(message) {
+  const rl = await import("node:readline/promises")
+  const i = rl.createInterface({ input: process.stdin, output: process.stdout })
+  const answer = await i.question(message)
+  i.close()
+  return answer.trim()
+}
 
-  // Step 1: Request APK build from PWABuilder
+async function main() {
+  const url = PWA_URL || (await prompt("Enter your deployed PWA URL: "))
+  if (!url) {
+    console.error("Error: PWA URL is required")
+    process.exit(1)
+  }
+
+  console.log(`\nBuilding APK for: ${url}`)
+  console.log("Submitting to PWABuilder...\n")
+
   const buildRes = await fetch(
-    `https://pwabuilder.com/api/v2/build?url=${encodeURIComponent(PWA_URL)}`,
+    `https://pwabuilder.com/api/v2/build?url=${encodeURIComponent(url)}`,
     { method: "POST" }
   )
 
   if (!buildRes.ok) {
     const text = await buildRes.text()
-    throw new Error(`PWABuilder API error: ${buildRes.status} ${text}`)
+    throw new Error(`PWABuilder API error (${buildRes.status}): ${text}`)
   }
 
-  const { id, status } = await buildRes.json()
-  console.log(`Build started. ID: ${id}, Status: ${status}`)
+  const { id } = await buildRes.json()
+  console.log(`Build started. ID: ${id}`)
+  console.log("Waiting for completion...\n")
 
-  // Step 2: Poll for completion
-  let attempts = 0
-  const maxAttempts = 30
-  while (attempts < maxAttempts) {
+  for (let i = 1; i <= 30; i++) {
     await new Promise((r) => setTimeout(r, 5000))
-    attempts++
 
-    const statusRes = await fetch(
-      `https://pwabuilder.com/api/v2/build/${id}`
-    )
+    const statusRes = await fetch(`https://pwabuilder.com/api/v2/build/${id}`)
     const result = await statusRes.json()
 
-    console.log(`  Attempt ${attempts}/${maxAttempts}: ${result.status}`)
+    process.stdout.write(`  [${i}/30] ${result.status}\r`)
 
     if (result.status === "COMPLETE") {
-      // Step 3: Download the APK
-      const apkRes = await fetch(
-        `https://pwabuilder.com/api/v2/build/${id}/apk`
-      )
+      console.log("\n\nBuild complete! Downloading APK...")
+
+      const apkRes = await fetch(`https://pwabuilder.com/api/v2/build/${id}/apk`)
       if (!apkRes.ok) throw new Error("Failed to download APK")
 
-      const fs = await import("fs")
+      const fs = await import("node:fs")
       const buffer = Buffer.from(await apkRes.arrayBuffer())
       const filename = `perfect-home-${Date.now()}.apk`
       fs.writeFileSync(filename, buffer)
-      console.log(`\nAPK saved: ${filename} (${(buffer.length / 1024 / 1024).toFixed(1)} MB)`)
+
+      console.log(`✓ APK saved: ${filename}`)
+      console.log(`  Size: ${(buffer.length / 1024 / 1024).toFixed(1)} MB`)
       return
     }
 
     if (result.status === "FAILED") {
-      throw new Error(`Build failed: ${result.errorMessage || "Unknown error"}`)
+      console.log(`\n✗ Build failed: ${result.errorMessage || "Unknown error"}`)
+      process.exit(1)
     }
   }
 
-  throw new Error("Build timed out")
+  console.log("\n✗ Build timed out (5 min)")
+  process.exit(1)
 }
 
-buildApk().catch((err) => {
-  console.error("APK build failed:", err.message)
+main().catch((err) => {
+  console.error(`\n✗ Error: ${err.message}`)
   process.exit(1)
 })
