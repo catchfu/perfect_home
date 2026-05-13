@@ -9,98 +9,71 @@ on:
         default: "https://perfect-home-chi.vercel.app"
 
 env:
-  NODE_VERSION: 20
+  ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+  ANDROID_HOME: /usr/local/lib/android/sdk
 
 jobs:
   apk:
-    name: Generate APK via CloudAPK
+    name: Generate APK via Bubblewrap
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Java
+        uses: actions/setup-java@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          distribution: temurin
+          java-version: 17
 
-      - name: Build APK via PWABuilder CloudAPK
-        id: build
-        run: |
-          URL="${{ github.event.inputs.pwa_url }}"
-          MANIFEST_URL="${URL}/manifest.webmanifest"
-          
-          echo "PWA URL: $URL"
-          echo "Manifest: $MANIFEST_URL"
-          
-          # Fetch manifest to extract app details
-          MANIFEST=$(curl -s "$MANIFEST_URL")
-          APP_NAME=$(echo "$MANIFEST" | jq -r '.name')
-          SHORT_NAME=$(echo "$MANIFEST" | jq -r '.short_name')
-          BG_COLOR=$(echo "$MANIFEST" | jq -r '.background_color')
-          THEME_COLOR=$(echo "$MANIFEST" | jq -r '.theme_color')
-          ICON_URL="${URL}/icons/icon-512.png"
-          
-          echo "App: $APP_NAME"
-          
-          # Submit to PWABuilder CloudAPK service
-          RESPONSE=$(curl -s -X POST "https://pwabuilder-cloudapk.azurewebsites.net/generateAppPackage" \
-            -H "Content-Type: application/json" \
-            -d "$(cat <<EOF
-          {
-            "url": "$MANIFEST_URL",
-            "host": "$URL",
-            "name": "$APP_NAME",
-            "shortName": "$SHORT_NAME",
-            "appPackage": "com.perfecthome.app",
-            "appVersion": "1.0.0.0",
-            "appVersionCode": 1,
-            "backgroundColor": "$BG_COLOR",
-            "themeColor": "$THEME_COLOR",
-            "navigationColor": "$THEME_COLOR",
-            "splashScreenBackgroundColor": "$BG_COLOR",
-            "display": "standalone",
-            "orientation": "portrait",
-            "iconUrl": "$ICON_URL",
-            "maskableIconUrl": "$ICON_URL",
-            "launchUrl": "/",
-            "signingMode": "unsigned",
-            "fallbackType": "customtab",
-            "isFullScopeUrl": true,
-            "isPackageIdOk": true,
-            "includeSourceApp": true,
-            "features": {},
-            "additionalTrustedOrigins": []
-          }
-          EOF
-          )")
-          
-          echo "Response:"
-          echo "$RESPONSE" | jq .
-          
-          # Check for download URL
-          DOWNLOAD_URL=$(echo "$RESPONSE" | jq -r '.downloadUrl // .zipUrl // empty')
-          if [ -z "$DOWNLOAD_URL" ] || [ "$DOWNLOAD_URL" = "null" ]; then
-            echo "No download URL found. Checking full response..."
-            echo "$RESPONSE" | jq -r 'keys | .[]' | while read key; do
-              echo "  $key: $(echo "$RESPONSE" | jq -r ".[$key]")"
-            done
-            exit 1
-          fi
-          
-          echo "download_url=$DOWNLOAD_URL" >> $GITHUB_OUTPUT
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-      - name: Download APK
+      - name: Setup Android SDK
         run: |
-          DOWNLOAD_URL="${{ steps.build.outputs.download_url }}"
+          echo "Setting up Android SDK..."
+          mkdir -p "$ANDROID_SDK_ROOT"
+          cd /tmp
+          curl -sL -o cmdline-tools.zip "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
+          unzip -q -o cmdline-tools.zip -d "$ANDROID_SDK_ROOT"
+          mv "$ANDROID_SDK_ROOT/cmdline-tools" "$ANDROID_SDK_ROOT/latest" 2>/dev/null || true
+          mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools"
+          mv "$ANDROID_SDK_ROOT/latest" "$ANDROID_SDK_ROOT/cmdline-tools/latest" 2>/dev/null || true
+          yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" \
+            --sdk_root="$ANDROID_SDK_ROOT" \
+            "platforms;android-34" \
+            "build-tools;34.0.0" 2>&1 | tail -5
+
+      - name: Install Bubblewrap
+        run: npm install -g @bubblewrap/cli
+
+      - name: Build APK
+        shell: bash
+        run: |
+          PWA_URL="${{ github.event.inputs.pwa_url }}"
+          MANIFEST="${PWA_URL}/manifest.webmanifest"
+          echo "Manifest: $MANIFEST"
+          
+          export JAVA_HOME=$JAVA_HOME_17_X64
           mkdir -p android-build
           
-          echo "Downloading from: $DOWNLOAD_URL"
-          curl -s -L -o android-build/perfect-home.zip "$DOWNLOAD_URL"
+          echo "--- Bubblewrap init ---"
+          npx @bubblewrap/cli init \
+            --manifest="$MANIFEST" \
+            --directory=./android-build 2>&1
           
-          if [ -f android-build/perfect-home.zip ]; then
-            ls -lh android-build/
-            unzip -o android-build/perfect-home.zip -d android-build/
-            ls -lh android-build/
+          echo "--- Files after init ---"
+          find android-build -type f
+          
+          if [ -f "android-build/twa-manifest.json" ]; then
+            echo "--- Bubblewrap build ---"
+            npx @bubblewrap/cli build \
+              --directory=./android-build 2>&1
           fi
+          
+          echo "--- Final output ---"
+          find android-build -type f \( -name "*.apk" -o -name "*.aab" -o -name "*.zip" \) 2>/dev/null || echo "No APK found"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
