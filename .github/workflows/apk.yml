@@ -59,7 +59,8 @@ jobs:
           mkdir -p android-build
           
           echo "--- Bubblewrap init ---"
-          printf 'n\n%s\n' "$JAVA_HOME_17_X64" | npx @bubblewrap/cli init \
+          # Accept default (Y) to let Bubblewrap install JDK
+          yes "" | npx @bubblewrap/cli init \
             --manifest="$MANIFEST" \
             --directory=./android-build 2>&1
           
@@ -69,8 +70,7 @@ jobs:
           if [ -f "android-build/twa-manifest.json" ]; then
             echo "--- Bubblewrap build ---"
             npx @bubblewrap/cli build \
-              --directory=./android-build \
-              --jdkPath="$JAVA_HOME_17_X64" 2>&1
+              --directory=./android-build 2>&1
           fi
           
           echo "--- Final output ---"
