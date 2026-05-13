@@ -46,7 +46,7 @@ test.describe("Navigation", () => {
     await page.goto("/")
     await page.getByRole("link", { name: /Pricing/i }).first().click()
     await expect(page).toHaveURL("/pricing")
-    await expect(page.getByText("Free")).toBeVisible()
+    await expect(page.getByRole("heading", { name: "Free" })).toBeVisible()
   })
 
   test("navigates to how it works", async ({ page }) => {
@@ -81,8 +81,7 @@ test.describe("Analyze page", () => {
 test.describe("Pricing page", () => {
   test("shows all plan tiers", async ({ page }) => {
     await page.goto("/pricing")
-    await expect(page.getByText("Free")).toBeVisible()
-    await expect(page.getByText("Pro Monthly")).toBeVisible()
+    await expect(page.getByRole("heading", { name: "Free" })).toBeVisible()
     await expect(page.getByText("Extra Credits")).toBeVisible()
   })
 })

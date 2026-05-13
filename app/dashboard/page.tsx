@@ -114,7 +114,7 @@ export default function DashboardPage() {
         </Card>
       ) : (
         <div className="space-y-4">
-          {reports.map((report: any) => (
+          {reports.map((report: { id: string; title?: string; createdAt: string }) => (
             <Link key={report.id} href={`/analyze/result/${report.id}`}>
               <Card className="flex items-center gap-4 transition-colors hover:bg-[#e0d9cf]">
                 <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#2C4A5A]/10">
