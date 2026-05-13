@@ -14,21 +14,23 @@ export async function POST(req: NextRequest) {
     )
 
     if (event.type === "checkout.session.completed") {
-      const session = event.data.object as any
-      const userId = session.metadata?.userId
-      const credits = parseInt(session.metadata?.credits ?? "0")
+      const stripeEvent = event as { type: string; data: { object: Record<string, unknown> } }
+      const session = stripeEvent.data.object
+      const userId = session.metadata as Record<string, string> | undefined
+      const uid = userId?.userId
+      const credits = parseInt(userId?.credits ?? "0")
 
-      if (userId && credits > 0) {
+      if (uid && credits > 0) {
         await prisma.user.update({
-          where: { id: userId },
+          where: { id: uid },
           data: { credits: { increment: credits } },
         })
 
         await prisma.payment.create({
           data: {
-            userId,
-            stripeSessionId: session.id,
-            amount: session.amount_total ?? 0,
+            userId: uid,
+            stripeSessionId: session.id as string,
+            amount: (session.amount_total as number) ?? 0,
             credits,
             status: "completed",
           },

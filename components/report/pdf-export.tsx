@@ -42,7 +42,7 @@ export function PdfExport({ reportId }: PdfExportProps) {
         doc.text("Key Issues", 14, yPos)
         yPos += 8
 
-        report.problems.forEach((problem: any, i: number) => {
+        report.problems.forEach((problem: Record<string, unknown>, i: number) => {
           doc.setFontSize(10)
           doc.setFont("helvetica", "bold")
           const text = `${String(i + 1).padStart(2, "0")}  ${problem.zone}`

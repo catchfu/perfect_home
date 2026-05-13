@@ -15,10 +15,10 @@ export function t(
   params?: Record<string, string | number>
 ): string {
   const keys = path.split(".")
-  let value: any = messages[locale] ?? messages.en
+  let value: unknown = messages[locale] ?? messages.en
 
   for (const key of keys) {
-    value = value?.[key]
+    value = (value as Record<string, unknown>)?.[key]
   }
 
   if (typeof value !== "string") return path

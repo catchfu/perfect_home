@@ -79,7 +79,7 @@ export default function DashboardPage() {
         <Card className="mb-8">
           <h3 className="mb-4 font-serif text-lg font-medium">{t("dashboard.paymentHistory")}</h3>
           <div className="space-y-3">
-            {payments.slice(0, 5).map((payment: any) => (
+            {payments.slice(0, 5).map((payment: { id: string; credits: number; amount: number; createdAt: string }) => (
               <div key={payment.id} className="flex items-center justify-between border-b border-[#D4CEC4] pb-2 last:border-0">
                 <div className="flex items-center gap-3">
                   <CreditCard className="h-4 w-4 text-[#2C4A5A]" />
