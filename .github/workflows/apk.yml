@@ -59,10 +59,9 @@ jobs:
           mkdir -p android-build
           
           echo "--- Bubblewrap init ---"
-          echo "n" | npx @bubblewrap/cli init \
+          printf 'n\n%s\n' "$JAVA_HOME_17_X64" | npx @bubblewrap/cli init \
             --manifest="$MANIFEST" \
-            --directory=./android-build \
-            --jdkPath="$JAVA_HOME_17_X64" 2>&1
+            --directory=./android-build 2>&1
           
           echo "--- Files after init ---"
           find android-build -type f
