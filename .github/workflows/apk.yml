@@ -8,10 +8,6 @@ on:
         required: true
         default: "https://perfect-home-chi.vercel.app"
 
-env:
-  ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
-  ANDROID_HOME: /usr/local/lib/android/sdk
-
 jobs:
   apk:
     name: Generate APK via Bubblewrap
@@ -30,21 +26,6 @@ jobs:
         with:
           node-version: 20
 
-      - name: Setup Android SDK
-        run: |
-          echo "Setting up Android SDK..."
-          mkdir -p "$ANDROID_SDK_ROOT"
-          cd /tmp
-          curl -sL -o cmdline-tools.zip "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
-          unzip -q -o cmdline-tools.zip -d "$ANDROID_SDK_ROOT"
-          mv "$ANDROID_SDK_ROOT/cmdline-tools" "$ANDROID_SDK_ROOT/latest" 2>/dev/null || true
-          mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools"
-          mv "$ANDROID_SDK_ROOT/latest" "$ANDROID_SDK_ROOT/cmdline-tools/latest" 2>/dev/null || true
-          yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" \
-            --sdk_root="$ANDROID_SDK_ROOT" \
-            "platforms;android-34" \
-            "build-tools;34.0.0" 2>&1 | tail -5
-
       - name: Install Bubblewrap
         run: npm install -g @bubblewrap/cli
 
@@ -55,12 +36,11 @@ jobs:
           MANIFEST="${PWA_URL}/manifest.webmanifest"
           echo "Manifest: $MANIFEST"
           
-          export JAVA_HOME=$JAVA_HOME_17_X64
           mkdir -p android-build
           
           echo "--- Bubblewrap init ---"
-          # Accept default (Y) to let Bubblewrap install JDK
-          yes "" | npx @bubblewrap/cli init \
+          # Answer all Bubblewrap prompts: Y for JDK/SDK install, y for ToS
+          yes "y" | npx @bubblewrap/cli init \
             --manifest="$MANIFEST" \
             --directory=./android-build 2>&1
           
