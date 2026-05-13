@@ -1,0 +1,46 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+env:
+  NODE_VERSION: 20
+
+jobs:
+  apk:
+    name: Generate APK from PWA
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install Bubblewrap
+        run: npm install -g @bubblewrap/cli
+
+      - name: Generate APK
+        run: |
+          npx bubblewrap init \
+            --manifest https://perfecthome.app/manifest.webmanifest \
+            --directory ./android-build \
+            --jdkPath $JAVA_HOME
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: perfect-home-apk
+          path: android-build/**/*.apk
+          retention-days: 30
