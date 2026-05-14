@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "eslint --max-warnings 100",
     "test": "playwright test --config=playwright.config.mts",
     "test:ui": "playwright test --config=playwright.config.mts --ui",
     "test:e2e": "start /wait npx next dev --port 3000 && npx playwright test --config=playwright.config.mts"
