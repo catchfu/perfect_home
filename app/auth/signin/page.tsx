@@ -7,7 +7,6 @@ import { Card } from "@/components/ui/card"
 
 export default function SignInPage() {
   const { locale } = useLocale()
-  const router = useRouter()
   const isEn = locale === "en"
 
   return (
