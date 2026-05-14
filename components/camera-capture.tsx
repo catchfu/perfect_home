@@ -36,15 +36,20 @@ export function CameraCapture({ onCapture }: CameraCaptureProps) {
   const startCamera = useCallback(async () => {
     setError(null)
     try {
-      const constraints = {
-        video: {
-          facingMode: "environment",
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
-        },
-        audio: false,
+      // Try rear camera first; fallback to any camera on PC
+      let stream: MediaStream
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false,
+        })
+      } catch {
+        // Fallback: any camera, no facing preference
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false,
+        })
       }
-      const stream = await navigator.mediaDevices.getUserMedia(constraints)
       streamRef.current = stream
       if (videoRef.current) {
         videoRef.current.srcObject = stream
