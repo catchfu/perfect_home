@@ -22,7 +22,7 @@ test.describe("Landing page", () => {
 
   test("shows sample reports", async ({ page }) => {
     await page.goto("/")
-    await expect(page.getByText(/Sample Reports/)).toBeVisible()
+    await expect(page.getByRole("heading", { name: "Sample Reports" })).toBeVisible()
     const images = page.locator("img[alt^='Sample report']")
     await expect(images).toHaveCount(3)
   })
