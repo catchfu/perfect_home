@@ -29,6 +29,7 @@ async function main() {
   const payload = {
     packageId: "com.perfecthome.app",
     host: url,
+    pwaUrl: url,
     name: m.name || "Perfect Home",
     launcherName: m.short_name || "Perfect Home",
     appVersion: "1.0.0.0",
@@ -36,16 +37,17 @@ async function main() {
     backgroundColor: m.background_color || "#F5F0EB",
     themeColor: m.theme_color || "#2C4A5A",
     navigationColor: m.theme_color || "#2C4A5A",
-    splashBackgroundColor: m.background_color || "#F5F0EB",
+    splashScreenFadeOutDuration: 300,
     display: m.display || "standalone",
     orientation: m.orientation || "portrait",
     startUrl: "/",
     iconUrl: `${url}/icons/icon-512.png`,
     maskableIconUrl: `${url}/icons/icon-512.png`,
     webManifestUrl: `${url}/manifest.webmanifest`,
-    fallbackType: "customtab",
+    fallbackType: "customtabs",
     signingMode: "none",
-    includeSourceApp: true,
+    includeSourceCode: true,
+    enableNotifications: false,
     features: {},
   }
 

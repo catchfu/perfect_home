@@ -37,6 +37,7 @@ jobs:
           {
             "packageId": "com.perfecthome.app",
             "host": "${PWA_URL}",
+            "pwaUrl": "${PWA_URL}",
             "name": "${APP_NAME}",
             "launcherName": "${SHORT_NAME}",
             "appVersion": "1.0.0.0",
@@ -44,16 +45,17 @@ jobs:
             "backgroundColor": "${BG_COLOR}",
             "themeColor": "${THEME_COLOR}",
             "navigationColor": "${THEME_COLOR}",
-            "splashBackgroundColor": "${BG_COLOR}",
+            "splashScreenFadeOutDuration": 300,
             "display": "${DISPLAY}",
             "orientation": "${ORIENTATION}",
             "startUrl": "/",
             "iconUrl": "${PWA_URL}/icons/icon-512.png",
             "maskableIconUrl": "${PWA_URL}/icons/icon-512.png",
             "webManifestUrl": "${PWA_URL}/manifest.webmanifest",
-            "fallbackType": "customtab",
+            "fallbackType": "customtabs",
             "signingMode": "none",
-            "includeSourceApp": true,
+            "includeSourceCode": true,
+            "enableNotifications": false,
             "features": {}
           }
           ENDJSON
