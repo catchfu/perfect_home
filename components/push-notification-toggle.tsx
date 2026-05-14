@@ -30,7 +30,10 @@ export function PushNotificationToggle() {
     if ("serviceWorker" in navigator && "PushManager" in window) {
       setSupported(true)
       checkSubscription()
+    } else {
+      setSupported(false)
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
   }, [checkSubscription])
 
   const subscribe = async () => {

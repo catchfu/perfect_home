@@ -30,7 +30,7 @@ test.describe("Landing page", () => {
   test("language toggle switches to Chinese", async ({ page }) => {
     await page.goto("/")
     await page.getByText("中文").click()
-    await expect(page.getByText("诊断你的户型")).toBeVisible()
+    await expect(page.getByRole("button", { name: "诊断你的户型" }).first()).toBeVisible()
   })
 })
 
