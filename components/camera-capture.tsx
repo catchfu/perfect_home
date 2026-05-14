@@ -1,8 +1,7 @@
 "use client"
 
-import { useRef, useState, useCallback } from "react"
+import { useRef, useState, useCallback, useEffect } from "react"
 import { Camera, X, RefreshCw, Check } from "lucide-react"
-import { Button } from "@/components/ui/button"
 
 interface CameraCaptureProps {
   onCapture: (file: File) => void
@@ -23,19 +22,43 @@ export function CameraCapture({ onCapture }: CameraCaptureProps) {
   const streamRef = useRef<MediaStream | null>(null)
   const [active, setActive] = useState(false)
   const [captured, setCaptured] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((t) => t.stop())
+      }
+    }
+  }, [])
 
   const startCamera = useCallback(async () => {
+    setError(null)
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment", aspectRatio: 4 / 3 },
-      })
+      const constraints = {
+        video: {
+          facingMode: "environment",
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+        },
+        audio: false,
+      }
+      const stream = await navigator.mediaDevices.getUserMedia(constraints)
       streamRef.current = stream
       if (videoRef.current) {
         videoRef.current.srcObject = stream
       }
       setActive(true)
-    } catch {
-      console.log("Camera not available")
+    } catch (err) {
+      const msg = err instanceof DOMException
+        ? err.name === "NotAllowedError"
+          ? "Camera permission denied. Please allow camera access in your browser settings."
+          : err.name === "NotFoundError"
+            ? "No camera found on this device."
+            : `Camera error: ${err.message}`
+        : "Camera not available"
+      setError(msg)
     }
   }, [])
 
@@ -45,6 +68,8 @@ export function CameraCapture({ onCapture }: CameraCaptureProps) {
       streamRef.current = null
     }
     setActive(false)
+    setCaptured(null)
+    setError(null)
   }, [])
 
   const capture = useCallback(() => {
@@ -58,7 +83,7 @@ export function CameraCapture({ onCapture }: CameraCaptureProps) {
     if (!ctx) return
 
     ctx.drawImage(video, 0, 0)
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.9)
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.85)
     setCaptured(dataUrl)
   }, [])
 
@@ -72,52 +97,94 @@ export function CameraCapture({ onCapture }: CameraCaptureProps) {
     const file = new File([blob], `floor-plan-${Date.now()}.jpg`, { type: "image/jpeg" })
     onCapture(file)
     stopCamera()
-    setCaptured(null)
   }, [captured, onCapture, stopCamera])
 
-  if (!active) {
-    return (
-      <Button variant="outline" type="button" onClick={startCamera} className="w-full">
-        <Camera className="mr-2 h-4 w-4" />
-        Take Photo
-      </Button>
-    )
-  }
-
   return (
-    <div className="relative overflow-hidden rounded-lg border border-[#D4CEC4] bg-black">
-      {captured ? (
-        <img src={captured} alt="Captured" className="w-full object-contain" />
-      ) : (
-        <video ref={videoRef} autoPlay playsInline className="w-full" />
+    <>
+      {/* Trigger button */}
+      {!active && !error && (
+        <button
+          onClick={startCamera}
+          className="flex w-full items-center justify-center gap-2 rounded-full border border-[#D4CEC4] bg-white px-6 py-3 text-sm font-medium text-[#2C2C2C] transition-colors hover:bg-[#EDE8E1] active:scale-[0.98]"
+        >
+          <Camera className="h-5 w-5" />
+          Take Photo
+        </button>
       )}
-      <canvas ref={canvasRef} className="hidden" />
 
-      <div className="absolute bottom-0 left-0 right-0 flex justify-center gap-4 bg-gradient-to-t from-black/60 to-transparent p-4">
-        {captured ? (
-          <>
-            <Button variant="secondary" size="sm" onClick={retake}>
-              <RefreshCw className="mr-1 h-4 w-4" />
-              Retake
-            </Button>
-            <Button size="sm" onClick={confirm}>
-              <Check className="mr-1 h-4 w-4" />
-              Use Photo
-            </Button>
-          </>
-        ) : (
-          <>
-            <Button variant="secondary" size="sm" onClick={stopCamera}>
-              <X className="mr-1 h-4 w-4" />
-              Cancel
-            </Button>
-            <Button size="sm" onClick={capture}>
-              <Camera className="mr-1 h-4 w-4" />
-              Capture
-            </Button>
-          </>
-        )}
-      </div>
-    </div>
+      {/* Error state */}
+      {error && !active && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-center">
+          <p className="text-sm text-red-600">{error}</p>
+          <button
+            onClick={() => setError(null)}
+            className="mt-2 text-xs text-[#6B6B6B] underline"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {/* Full-screen camera overlay */}
+      {active && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-black">
+          {/* Camera view */}
+          <div className="relative flex-1 overflow-hidden">
+            {captured ? (
+              <img
+                src={captured}
+                alt="Captured floor plan"
+                className="h-full w-full object-contain"
+              />
+            ) : (
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                className="h-full w-full object-cover"
+              />
+            )}
+            <canvas ref={canvasRef} className="hidden" />
+          </div>
+
+          {/* Controls */}
+          <div className="flex items-center justify-center gap-8 bg-black px-6 py-6">
+            {captured ? (
+              <>
+                <button
+                  onClick={retake}
+                  className="flex flex-col items-center gap-1 text-white/70"
+                >
+                  <RefreshCw className="h-6 w-6" />
+                  <span className="text-xs">Retake</span>
+                </button>
+                <button
+                  onClick={confirm}
+                  className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-white bg-white/20"
+                >
+                  <Check className="h-8 w-8 text-white" />
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={stopCamera}
+                  className="flex flex-col items-center gap-1 text-white/70"
+                >
+                  <X className="h-6 w-6" />
+                  <span className="text-xs">Cancel</span>
+                </button>
+                <button
+                  onClick={capture}
+                  className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-white bg-white/20"
+                >
+                  <div className="h-12 w-12 rounded-full border-2 border-white" />
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </>
   )
 }
