@@ -15,71 +15,68 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Java 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 17
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Setup Android SDK
-        env:
-          ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
-        run: |
-          mkdir -p $ANDROID_SDK_ROOT
-          cd /tmp
-          curl -sL -o cmdline-tools.zip "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
-          unzip -q -o cmdline-tools.zip
-          mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
-          mv cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest
-          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager \
-            --sdk_root=$ANDROID_SDK_ROOT \
-            "platforms;android-34" "build-tools;34.0.0" > /dev/null 2>&1
-
-      - name: Install Bubblewrap
-        run: npm install -g @bubblewrap/cli
-
-      - name: Build APK
-        shell: bash
-        env:
-          ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      - name: Build APK via CloudAPK
         run: |
           PWA_URL="${{ github.event.inputs.pwa_url }}"
-          MANIFEST="${PWA_URL}/manifest.webmanifest"
-          echo "PWA: $PWA_URL"
-          export JAVA_HOME=$JAVA_HOME_17_X64
-          mkdir -p android-build
+          echo "URL: $PWA_URL"
 
-          # Use 'script' to create a pseudo-TTY (Bubblewrap uses inquirer which needs a real TTY)
-          # Pipe answers via stdin through the PTY
-          echo "--- Bubblewrap init ---"
-          ANSWERS="Y
-          Y
-          y
-          com.perfecthome.app
-          Perfect Home
-          1.0.0
-          1
-          "
-          echo "$ANSWERS" | script -q -c "npx @bubblewrap/cli init --manifest \"$MANIFEST\" --directory ./android-build 2>&1" /dev/null
+          MANIFEST=$(curl -s "${PWA_URL}/manifest.webmanifest")
+          APP_NAME=$(echo "$MANIFEST" | jq -r '.name')
+          SHORT_NAME=$(echo "$MANIFEST" | jq -r '.short_name')
+          BG_COLOR=$(echo "$MANIFEST" | jq -r '.background_color // "#F5F0EB"')
+          THEME_COLOR=$(echo "$MANIFEST" | jq -r '.theme_color // "#2C4A5A"')
+          DISPLAY=$(echo "$MANIFEST" | jq -r '.display // "standalone"')
+          ORIENTATION=$(echo "$MANIFEST" | jq -r '.orientation // "portrait"')
 
-          echo "--- Files after init ---"
-          find android-build -type f | head -15
+          PAYLOAD=$(cat <<ENDJSON
+          {
+            "packageId": "com.perfecthome.app",
+            "host": "${PWA_URL}",
+            "name": "${APP_NAME}",
+            "launcherName": "${SHORT_NAME}",
+            "appVersion": "1.0.0.0",
+            "appVersionCode": 1,
+            "backgroundColor": "${BG_COLOR}",
+            "themeColor": "${THEME_COLOR}",
+            "navigationColor": "${THEME_COLOR}",
+            "splashBackgroundColor": "${BG_COLOR}",
+            "display": "${DISPLAY}",
+            "orientation": "${ORIENTATION}",
+            "startUrl": "/",
+            "iconUrl": "${PWA_URL}/icons/icon-512.png",
+            "maskableIconUrl": "${PWA_URL}/icons/icon-512.png",
+            "webManifestUrl": "${PWA_URL}/manifest.webmanifest",
+            "fallbackType": "customtab",
+            "signingMode": "none",
+            "includeSourceApp": true,
+            "features": {}
+          }
+          ENDJSON
+          )
 
-          if [ -f "android-build/twa-manifest.json" ]; then
-            echo "--- Bubblewrap build ---"
-            script -q -c "npx @bubblewrap/cli build --directory ./android-build" /dev/null
-          else
-            echo "ERROR: init failed"
-            ls -la android-build/
+          echo "Submitting to CloudAPK..."
+          HTTP_CODE=$(curl -s -o android-build.zip -w "%{http_code}" \
+            -X POST "https://pwabuilder-cloudapk.azurewebsites.net/generateAppPackage" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD")
+
+          echo "HTTP Status: $HTTP_CODE"
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "CloudAPK error:"
+            cat android-build.zip 2>/dev/null || echo "No response body"
+            exit 1
           fi
 
-          echo "--- APK Output ---"
-          find android-build -type f \( -name "*.apk" -o -name "*.aab" \) 2>/dev/null || echo "No APK found"
+          mkdir -p android-build
+          unzip -o android-build.zip -d android-build/ 2>&1
+          echo "--- Output ---"
+          ls -la android-build/
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
