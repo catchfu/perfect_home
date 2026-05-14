@@ -1,7 +1,6 @@
 "use client"
 
 import { signIn } from "next-auth/react"
-import { useRouter } from "next/navigation"
 import { useLocale } from "@/hooks/use-localization"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"

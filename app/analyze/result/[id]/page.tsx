@@ -3,15 +3,12 @@
 import { useQuery } from "@tanstack/react-query"
 import { useParams } from "next/navigation"
 import { useLocale } from "@/hooks/use-localization"
-import { Card, CardTitle } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ShareButtons } from "@/components/report/share-buttons"
 import { PdfExport } from "@/components/report/pdf-export"
 import {
   AlertTriangle,
-  Download,
-  Home,
-  Lightbulb,
   MapPin,
   Target,
   Image as ImageIcon,

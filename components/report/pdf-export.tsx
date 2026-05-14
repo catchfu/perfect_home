@@ -1,8 +1,7 @@
 "use client"
 
-import { useRef } from "react"
 import { Button } from "@/components/ui/button"
-import { Download, FileDown } from "lucide-react"
+import { FileDown } from "lucide-react"
 import { useLocale } from "@/hooks/use-localization"
 
 interface PdfExportProps {

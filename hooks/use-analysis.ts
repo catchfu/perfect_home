@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import type { FloorPlanContext, DiagnosisReportData } from "@/types"
+import type { FloorPlanContext } from "@/types"
 
 interface AnalysisState {
   status: "idle" | "uploading" | "analyzing" | "completed" | "error"

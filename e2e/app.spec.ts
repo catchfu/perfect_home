@@ -9,7 +9,7 @@ test.describe("Landing page", () => {
   test("shows hero section with CTA button", async ({ page }) => {
     await page.goto("/")
     await expect(page.locator("h1")).toContainText("Floor Plan")
-    const cta = page.getByRole("link", { name: /Analyze Your Floor Plan/i })
+    const cta = page.getByRole("link", { name: /Analyze Your Floor Plan/i }).first()
     await expect(cta).toBeVisible()
   })
 
