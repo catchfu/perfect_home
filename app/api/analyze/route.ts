@@ -18,13 +18,9 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(await file.arrayBuffer())
     const fileName = `${Date.now()}-${file.name}`
 
-    // Store file locally for now (replace with S3/R2 in production)
-    const fs = await import("fs/promises")
-    const path = await import("path")
-    const uploadsDir = path.join(process.cwd(), "public", "uploads")
-    await fs.mkdir(uploadsDir, { recursive: true })
-    const filePath = path.join(uploadsDir, fileName)
-    await fs.writeFile(filePath, buffer)
+    // Upload to R2
+    const { uploadToR2 } = await import("@/lib/r2")
+    const imageUrl = await uploadToR2(`floor-plans/${fileName}`, buffer, file.type || "image/jpeg")
 
     const context = contextRaw ? JSON.parse(contextRaw) : {}
 
@@ -43,7 +39,7 @@ export async function POST(req: NextRequest) {
     const floorPlan = await prisma.floorPlan.create({
       data: {
         userId: session?.user?.id,
-        imageUrl: `/uploads/${fileName}`,
+        imageUrl,
         context: context,
         direction: context.direction ?? null,
         status: "pending",

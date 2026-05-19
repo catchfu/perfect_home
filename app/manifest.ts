@@ -18,6 +18,24 @@ export default function manifest(): MetadataRoute.Manifest {
         type: "image/jpeg",
         form_factor: "wide",
       },
+      {
+        src: "/sample2.jpg",
+        sizes: "1170x832",
+        type: "image/jpeg",
+        form_factor: "wide",
+      },
+      {
+        src: "/sample3.jpg",
+        sizes: "1170x832",
+        type: "image/jpeg",
+        form_factor: "narrow",
+      },
+      {
+        src: "/sample4.jpg",
+        sizes: "1170x832",
+        type: "image/jpeg",
+        form_factor: "narrow",
+      },
     ],
     shortcuts: [
       {
